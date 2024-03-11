@@ -49,7 +49,7 @@ public class FullBatcher : IDisposable
     {
         batcherTasks.Enqueue(batch);
         reset.Set();
-        Outflow.Debug($"Queued FullBatch for #{batch.SenderStateVersion}\nFullBatch queue count: {batcherTasks.Count}");
+        //Outflow.Debug($"Queued FullBatch for #{batch.SenderStateVersion}\nFullBatch queue count: {batcherTasks.Count}");
     }
 
 
@@ -68,7 +68,7 @@ public class FullBatcher : IDisposable
         else if (IsProcessing && reliable is not StreamMessage)
         {
             reliableQueue.Enqueue(reliable.Encode());
-            Outflow.Debug($"Work is processing, queued #{reliable.SenderStateVersion}: {reliable.GetType().Name}{(reliable is ControlMessage msg ? $",{msg.ControlMessageType}" : "")}\nQueue has {reliableQueue.Count}");
+            //Outflow.Debug($"Work is processing, queued #{reliable.SenderStateVersion}: {reliable.GetType().Name}{(reliable is ControlMessage msg ? $",{msg.ControlMessageType}" : "")}\nQueue has {reliableQueue.Count}");
             reliable.Dispose();
         }
         else
@@ -99,7 +99,7 @@ public class FullBatcher : IDisposable
                 TimeSpan afterEncode = DateTime.Now - beforeEncode;
 
                 
-                Outflow.Debug($"Encode took {afterEncode.TotalMilliseconds}ms");
+                //Outflow.Debug($"Encode took {afterEncode.TotalMilliseconds}ms");
 
 
                 batch.Dispose();
@@ -108,7 +108,7 @@ public class FullBatcher : IDisposable
 
                 if (fb != batch)
                 {
-                    Outflow.Debug($"Message queue was modified after peek");
+                    //Outflow.Debug($"Message queue was modified after peek");
                     continue;
                 }
 
@@ -116,7 +116,7 @@ public class FullBatcher : IDisposable
                 readyBatches.Enqueue(encoded); // Load 'er up partner
             }
             double totalMillis = (DateTime.Now - last).TotalMilliseconds;
-            Outflow.Debug($"FullBatches done processing in {totalMillis}ms");
+            //Outflow.Debug($"FullBatches done processing in {totalMillis}ms");
         }
     }
 
@@ -130,20 +130,20 @@ public class FullBatcher : IDisposable
     {
         if (IsProcessing)
         {
-            Outflow.Debug($"Returning -2 since processing is going on");
+            //Outflow.Debug($"Returning -2 since processing is going on");
             return -2;
         }
 
 
         if (reliableQueue.Count == 0 && readyBatches.Count == 0)
         {
-            Outflow.Debug($"Returning -1 since no messages are in queue");
+            //Outflow.Debug($"Returning -1 since no messages are in queue");
             return -1;
         }
 
 
-        Outflow.Debug($"Ready full batches: {readyBatches.Count}");
-        Outflow.Debug($"Ready reliable messages: {reliableQueue.Count}");
+        //Outflow.Debug($"Ready full batches: {readyBatches.Count}");
+        //Outflow.Debug($"Ready reliable messages: {reliableQueue.Count}");
         
 
         int flushed = 0;
@@ -152,21 +152,21 @@ public class FullBatcher : IDisposable
 
         while (readyBatches.TryDequeue(out RawOutMessage full)) // Transmit all fulls
         {
-            Outflow.Debug("Flushing encoded FullBatch");
+            //Outflow.Debug("Flushing encoded FullBatch");
             session.NetworkManager.TransmitData(full);
             flushed++;
         }
 
         while (reliableQueue.TryDequeue(out RawOutMessage queued)) // Transmit all queued reliable messages afterwards
         {
-            Outflow.Debug($"Flushing reliable message");
+            //Outflow.Debug($"Flushing reliable message");
             session.NetworkManager.TransmitData(queued);
             flushed++;
         }
 
 
         double totalMillis = (DateTime.Now - last).TotalMilliseconds;
-        Outflow.Debug($"Full queue: {readyBatches.Count}\nMessage queue: {reliableQueue.Count}\nReal FullBatch queue: {batcherTasks.Count}\nTook {totalMillis}ms");
+        //Outflow.Debug($"Full queue: {readyBatches.Count}\nMessage queue: {reliableQueue.Count}\nReal FullBatch queue: {batcherTasks.Count}\nTook {totalMillis}ms");
         return flushed;
     }
 
